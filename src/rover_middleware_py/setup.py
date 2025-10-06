@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'qos_sub = rover_middleware_py.qos_sub:main',
-            'qos_sub_2 = rover_middleware_py.qos_sub_2:main'
+            'qos_sub_2 = rover_middleware_py.qos_sub_2:main',
+            'qos_sub_ss = rover_middleware_py.qos_sub_ss:main'
         ],
     },
 )
