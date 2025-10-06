@@ -16,7 +16,7 @@ class CompressedImageSubscriber(Node):
         )
         self.sub = self.create_subscription(
             CompressedImage,                 # <--- bedanya di sini
-            '/image_main/compressed',  # pastikan sesuai topic
+            '/image_mini_arm/compressed',  # pastikan sesuai topic
             self.callback,
             qos_profile
         )
@@ -25,7 +25,7 @@ class CompressedImageSubscriber(Node):
         # Cara decode CompressedImage
         np_arr = np.frombuffer(msg.data, np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)  # bisa IMREAD_GRAYSCALE
-        cv2.imshow("Compressed Image", frame)
+        cv2.imshow("Compressed Image _2", frame)
         cv2.waitKey(1)
 
 def main():

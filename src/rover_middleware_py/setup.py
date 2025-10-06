@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'qos_sub = rover_middleware_py.qos_sub:main'
+            'qos_sub = rover_middleware_py.qos_sub:main',
+            'qos_sub_2 = rover_middleware_py.qos_sub_2:main'
         ],
     },
 )
