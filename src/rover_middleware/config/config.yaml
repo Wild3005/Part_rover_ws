@@ -1,0 +1,17 @@
+arm_pov:
+  ros__parameters:
+    qos_state_main: false
+    qos_state_mini_arm: false
+    qos_state_screenshot: false
+
+    topic_main: "/image_main"
+    topic_mini_arm: "/image_mini_arm"
+    topic_screenshot: "/image_screenshot"
+
+    pub_main_compressed_image: false
+    pub_mini_arm_compressed_image: false
+    pub_screenshot_compressed_image: false
+
+    path_cam_main: "/dev/v4l/by-id/usb-BC-231018-A_XWF_1080P_PC_Camera-video-index0"
+    path_cam_mini_arm: "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH1706_20211203_v004-video-index0"
+    path_cam_screenshot: "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH17cmvk06_20211203_v004-video-index0"

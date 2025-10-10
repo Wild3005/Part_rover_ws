@@ -14,9 +14,56 @@ using namespace std::chrono_literals;
 class arm_pov : public rclcpp::Node {
 public:
     arm_pov() : Node("arm_pov") {
+        this->declare_parameter("qos_state_main", false);
+        this->declare_parameter("qos_state_mini_arm", false);
+        this->declare_parameter("qos_state_screenshot", false);
+
+        this->declare_parameter("topic_main", "/image_main");
+        this->declare_parameter("topic_mini_arm", "/image_mini_arm");
+        this->declare_parameter("topic_screenshot", "/image_screenshot");
+
+        this->declare_parameter("pub_main_compressed_image", false);
+        this->declare_parameter("pub_mini_arm_compressed_image", false);
+        this->declare_parameter("pub_screenshot_compressed_image", false);
+
+        this->declare_parameter("path_cam_main", "/dev/v4l/by-id/usb-BC-231018-A_XWF_1080P_PC_Camera-video-index0");
+        this->declare_parameter("path_cam_mini_arm", "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH1706_20211203_v004-video-index0");
+        this->declare_parameter("path_cam_screenshot", "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH17cmvk06_20211203_v004-video-index0");
+
+        path_cam_main = this->get_parameter("path_cam_main").as_string();
+        path_cam_mini_arm = this->get_parameter("path_cam_mini_arm").as_string();
+        path_cam_screenshot = this->get_parameter("path_cam_screenshot").as_string();
+
+        qos_state_main = this->get_parameter("qos_state_main").as_bool();
+        qos_state_mini_arm = this->get_parameter("qos_state_mini_arm").as_bool();
+        output_besteffort_screenshot = this->get_parameter("qos_state_screenshot").as_bool();
+
+        topic_main = this->get_parameter("topic_main").as_string();
+        topic_mini_arm = this->get_parameter("topic_mini_arm").as_string();
+        topic_screenshot = this->get_parameter("topic_screenshot").as_string();
+
+        pub_main = this->get_parameter("pub_main_compressed_image").as_bool();
+        pub_mini_arm = this->get_parameter("pub_mini_arm_compressed_image").as_bool();
+        pub_screenshot = this->get_parameter("pub_screenshot_compressed_image").as_bool();
+
+        //DEBUG
+        RCLCPP_INFO(this->get_logger(), "qos_state_main: %s", qos_state_main ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "qos_state_mini_arm: %s", qos_state_mini_arm ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "output_besteffort_screenshot: %s", output_besteffort_screenshot ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "topic_main: %s", topic_main.c_str());
+        RCLCPP_INFO(this->get_logger(), "topic_mini_arm: %s", topic_mini_arm.c_str());
+        RCLCPP_INFO(this->get_logger(), "topic_screenshot: %s", topic_screenshot.c_str());
+        RCLCPP_INFO(this->get_logger(), "pub_main_compressed_image: %s", pub_main ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "pub_mini_arm_compressed_image: %s", pub_mini_arm ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "pub_screenshot_compressed_image: %s", pub_screenshot ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "path_cam_main: %s", path_cam_main.c_str());
+        RCLCPP_INFO(this->get_logger(), "path_cam_mini_arm: %s", path_cam_mini_arm.c_str());
+        RCLCPP_INFO(this->get_logger(), "path_cam_screenshot: %s", path_cam_screenshot.c_str());
+        
         cap_main.open(path_cam_main);
         cap_mini_arm.open(path_cam_mini_arm);
         cap_screenshot.open(path_cam_screenshot);
+
         if(cap_screenshot.isOpened()) {
             cap_screenshot.set(cv::CAP_PROP_BUFFERSIZE, 1);  // Buffer minimal
         }
@@ -154,9 +201,9 @@ private:
     cv::VideoCapture cap_mini_arm;
     cv::VideoCapture cap_screenshot;
 
-    std::string path_cam_main = "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH1706_20211203_v004-video-index0";
-    std::string path_cam_mini_arm = "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH1706_20211203_v004-video-index0";
-    std::string path_cam_screenshot = "/dev/v4l/by-id/usb-BC-231018-A_XWF_1080P_PC_Camera-video-index0";
+    std::string path_cam_main;
+    std::string path_cam_mini_arm;
+    std::string path_cam_screenshot;
 
     rclcpp::Subscription<std_msgs::msg::Char>::SharedPtr image_screenshot_sub;
 
@@ -176,21 +223,21 @@ private:
     cv::Mat frame_mini_arm;
     cv::Mat frame_screenshot;
 
-    bool output_besteffort_main = true;
-    bool output_besteffort_mini_arm = true;
-    bool output_besteffort_screenshot = true;
+    bool output_besteffort_main = false;
+    bool output_besteffort_mini_arm = false;
+    bool output_besteffort_screenshot = false;
     
-    bool qos_state_main = true;
-    bool qos_state_mini_arm = true;
-    bool qos_state_screenshot = true;
+    bool qos_state_main = false;
+    bool qos_state_mini_arm = false;
+    bool qos_state_screenshot = false;
 
     std::string topic_main = "/image_main";
     std::string topic_mini_arm = "/image_mini_arm";
     std::string topic_screenshot = "/image_screenshot";
 
-    bool pub_main = true;
-    bool pub_mini_arm = true;
-    bool pub_screenshot = true;
+    bool pub_main = false;
+    bool pub_mini_arm = false;
+    bool pub_screenshot = false;
 };
 
 void arm_pov::raw_callback(const sensor_msgs::msg::Image::ConstSharedPtr& msg, 
