@@ -30,13 +30,22 @@ public:
         this->declare_parameter("path_cam_mini_arm", "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH1706_20211203_v004-video-index0");
         this->declare_parameter("path_cam_screenshot", "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH17cmvk06_20211203_v004-video-index0");
 
+        this->declare_parameter("width_main", 640);
+        this->declare_parameter("height_main", 480);
+
+        this->declare_parameter("width_mini_arm", 640);
+        this->declare_parameter("height_mini_arm", 480);
+
+        this->declare_parameter("width_screenshot", 640);
+        this->declare_parameter("height_screenshot", 480);
+
         path_cam_main = this->get_parameter("path_cam_main").as_string();
         path_cam_mini_arm = this->get_parameter("path_cam_mini_arm").as_string();
         path_cam_screenshot = this->get_parameter("path_cam_screenshot").as_string();
 
         qos_state_main = this->get_parameter("qos_state_main").as_bool();
         qos_state_mini_arm = this->get_parameter("qos_state_mini_arm").as_bool();
-        output_besteffort_screenshot = this->get_parameter("qos_state_screenshot").as_bool();
+        qos_state_screenshot = this->get_parameter("qos_state_screenshot").as_bool();
 
         topic_main = this->get_parameter("topic_main").as_string();
         topic_mini_arm = this->get_parameter("topic_mini_arm").as_string();
@@ -46,10 +55,19 @@ public:
         pub_mini_arm = this->get_parameter("pub_mini_arm_compressed_image").as_bool();
         pub_screenshot = this->get_parameter("pub_screenshot_compressed_image").as_bool();
 
+        width_main = this->get_parameter("width_main").as_int();
+        height_main = this->get_parameter("height_main").as_int();
+
+        width_mini_arm = this->get_parameter("width_mini_arm").as_int();
+        height_mini_arm = this->get_parameter("height_mini_arm").as_int();
+
+        width_screenshot = this->get_parameter("width_screenshot").as_int();
+        height_screenshot = this->get_parameter("height_screenshot").as_int();
+
         //DEBUG
         RCLCPP_INFO(this->get_logger(), "qos_state_main: %s", qos_state_main ? "true" : "false");
         RCLCPP_INFO(this->get_logger(), "qos_state_mini_arm: %s", qos_state_mini_arm ? "true" : "false");
-        RCLCPP_INFO(this->get_logger(), "output_besteffort_screenshot: %s", output_besteffort_screenshot ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "qos_state_screenshot: %s", qos_state_screenshot ? "true" : "false");
         RCLCPP_INFO(this->get_logger(), "topic_main: %s", topic_main.c_str());
         RCLCPP_INFO(this->get_logger(), "topic_mini_arm: %s", topic_mini_arm.c_str());
         RCLCPP_INFO(this->get_logger(), "topic_screenshot: %s", topic_screenshot.c_str());
@@ -59,7 +77,22 @@ public:
         RCLCPP_INFO(this->get_logger(), "path_cam_main: %s", path_cam_main.c_str());
         RCLCPP_INFO(this->get_logger(), "path_cam_mini_arm: %s", path_cam_mini_arm.c_str());
         RCLCPP_INFO(this->get_logger(), "path_cam_screenshot: %s", path_cam_screenshot.c_str());
-        
+        RCLCPP_INFO(this->get_logger(), "width_main: %d", width_main);
+        RCLCPP_INFO(this->get_logger(), "height_main: %d", height_main);
+        RCLCPP_INFO(this->get_logger(), "width_mini_arm: %d", width_mini_arm);
+        RCLCPP_INFO(this->get_logger(), "height_mini_arm: %d", height_mini_arm);
+        RCLCPP_INFO(this->get_logger(), "width_screenshot: %d", width_screenshot);
+        RCLCPP_INFO(this->get_logger(), "height_screenshot: %d", height_screenshot);
+
+        cap_main.set(cv::CAP_PROP_FRAME_WIDTH, width_main);
+        cap_main.set(cv::CAP_PROP_FRAME_HEIGHT, height_main);
+
+        cap_mini_arm.set(cv::CAP_PROP_FRAME_WIDTH, width_mini_arm);
+        cap_mini_arm.set(cv::CAP_PROP_FRAME_HEIGHT, height_mini_arm);
+
+        cap_screenshot.set(cv::CAP_PROP_FRAME_WIDTH, width_screenshot);
+        cap_screenshot.set(cv::CAP_PROP_FRAME_HEIGHT, height_screenshot);
+
         cap_main.open(path_cam_main);
         cap_mini_arm.open(path_cam_mini_arm);
         cap_screenshot.open(path_cam_screenshot);
@@ -89,7 +122,7 @@ public:
         // QoS setting
         qos_output_publish(qos_main, qos_state_main);
         qos_output_publish(qos_mini_arm, qos_state_mini_arm);
-        qos_output_publish(qos_screenshot, output_besteffort_screenshot);
+        qos_output_publish(qos_screenshot, qos_state_screenshot);
 
         // Publisher setup
         publish_compressed(topic_main, pub_main, image_pub_main, image_pub_main_compressed, qos_main);
@@ -223,9 +256,9 @@ private:
     cv::Mat frame_mini_arm;
     cv::Mat frame_screenshot;
 
-    bool output_besteffort_main = false;
-    bool output_besteffort_mini_arm = false;
-    bool output_besteffort_screenshot = false;
+    // bool output_besteffort_main = false;
+    // bool output_besteffort_mini_arm = false;
+    // bool output_besteffort_screenshot = false;
     
     bool qos_state_main = false;
     bool qos_state_mini_arm = false;
@@ -238,6 +271,15 @@ private:
     bool pub_main = false;
     bool pub_mini_arm = false;
     bool pub_screenshot = false;
+
+    int width_main = 640;
+    int height_main = 480;
+
+    int width_mini_arm = 640;
+    int height_mini_arm = 480;
+
+    int width_screenshot = 640;
+    int height_screenshot = 480;
 };
 
 void arm_pov::raw_callback(const sensor_msgs::msg::Image::ConstSharedPtr& msg, 
