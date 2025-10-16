@@ -77,12 +77,16 @@ public:
         RCLCPP_INFO(this->get_logger(), "path_cam_main: %s", path_cam_main.c_str());
         RCLCPP_INFO(this->get_logger(), "path_cam_mini_arm: %s", path_cam_mini_arm.c_str());
         RCLCPP_INFO(this->get_logger(), "path_cam_screenshot: %s", path_cam_screenshot.c_str());
-        RCLCPP_INFO(this->get_logger(), "width_main: %d", width_main);
-        RCLCPP_INFO(this->get_logger(), "height_main: %d", height_main);
-        RCLCPP_INFO(this->get_logger(), "width_mini_arm: %d", width_mini_arm);
-        RCLCPP_INFO(this->get_logger(), "height_mini_arm: %d", height_mini_arm);
-        RCLCPP_INFO(this->get_logger(), "width_screenshot: %d", width_screenshot);
-        RCLCPP_INFO(this->get_logger(), "height_screenshot: %d", height_screenshot);
+        RCLCPP_WARN(this->get_logger(), "width_main: %d", width_main);
+        RCLCPP_WARN(this->get_logger(), "height_main: %d", height_main);
+        RCLCPP_WARN(this->get_logger(), "width_mini_arm: %d", width_mini_arm);
+        RCLCPP_WARN(this->get_logger(), "height_mini_arm: %d", height_mini_arm);
+        RCLCPP_WARN(this->get_logger(), "width_screenshot: %d", width_screenshot);
+        RCLCPP_WARN(this->get_logger(), "height_screenshot: %d", height_screenshot);
+
+        cap_main.open(path_cam_main);
+        cap_mini_arm.open(path_cam_mini_arm);
+        cap_screenshot.open(path_cam_screenshot);
 
         cap_main.set(cv::CAP_PROP_FRAME_WIDTH, width_main);
         cap_main.set(cv::CAP_PROP_FRAME_HEIGHT, height_main);
@@ -92,10 +96,6 @@ public:
 
         cap_screenshot.set(cv::CAP_PROP_FRAME_WIDTH, width_screenshot);
         cap_screenshot.set(cv::CAP_PROP_FRAME_HEIGHT, height_screenshot);
-
-        cap_main.open(path_cam_main);
-        cap_mini_arm.open(path_cam_mini_arm);
-        cap_screenshot.open(path_cam_screenshot);
 
         if(cap_screenshot.isOpened()) {
             cap_screenshot.set(cv::CAP_PROP_BUFFERSIZE, 1);  // Buffer minimal

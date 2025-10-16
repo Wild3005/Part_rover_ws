@@ -19,8 +19,8 @@ arm_pov:
     width_main: 640
     height_main: 480
 
-    width_mini_arm: 640
-    height_mini_arm: 480
+    width_mini_arm: 320 #320x240
+    height_mini_arm: 240 #320x240
 
     width_screenshot: 640
     height_screenshot: 480
