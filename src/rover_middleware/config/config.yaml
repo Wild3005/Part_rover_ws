@@ -1,6 +1,6 @@
 arm_pov:
   ros__parameters:
-    qos_state_main: false
+    qos_state_main: true
     qos_state_mini_arm: true
     qos_state_screenshot: true
 
@@ -12,15 +12,17 @@ arm_pov:
     pub_mini_arm_compressed_image: false
     pub_screenshot_compressed_image: false
 
-    path_cam_main: "/dev/v4l/by-id/usb-ANYKA_FHD_Camera_12345-video-index0"
-    path_cam_mini_arm: "/dev/v4l/by-id/usb-BC-231018-A_XWF_1080P_PC_Camera-video-index0"
-    path_cam_screenshot: "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH17cmvk06_20211203_v004-video-index0"
+    path_cam_main: "/dev/v4l/by-id/usb-BC-231018-A_XWF_1080P_PC_Camera-video-index0"
+    path_cam_mini_arm: "/dev/v4l/by-id/usb-ANYKA_FHD_Camera_12345-video-index0"
+    path_cam_screenshot: "/dev/v4l/by-id/usb-Generic_HP_TrueVision_HD_Camera_0001-video-index0"
+
+    #320x240, 640x480, 1280x720, 1920x1080
 
     width_main: 640
     height_main: 480
 
-    width_mini_arm: 320 #320x240
-    height_mini_arm: 240 #320x240
+    width_mini_arm: 320
+    height_mini_arm: 240
 
     width_screenshot: 640
     height_screenshot: 480
