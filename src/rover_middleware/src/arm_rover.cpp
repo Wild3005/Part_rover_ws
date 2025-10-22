@@ -39,6 +39,12 @@ public:
         this->declare_parameter("width_screenshot", 640);
         this->declare_parameter("height_screenshot", 480);
 
+        this->declare_parameter("fps_main",30);
+        this->declare_parameter("fps_mini_arm",30);
+
+        this->declare_parameter("is_main_gray", true);
+        this->declare_parameter("is_mini_arm_gray", true);
+
         path_cam_main = this->get_parameter("path_cam_main").as_string();
         path_cam_mini_arm = this->get_parameter("path_cam_mini_arm").as_string();
         path_cam_screenshot = this->get_parameter("path_cam_screenshot").as_string();
@@ -64,6 +70,12 @@ public:
         width_screenshot = this->get_parameter("width_screenshot").as_int();
         height_screenshot = this->get_parameter("height_screenshot").as_int();
 
+        fps_main = this->get_parameter("fps_main").as_int();
+        fps_mini_arm = this->get_parameter("fps_mini_arm").as_int();
+
+        is_main_gray = this->get_parameter("is_main_gray").as_bool();
+        is_mini_arm_gray = this->get_parameter("is_mini_arm_gray").as_bool();
+
         //DEBUG
         RCLCPP_INFO(this->get_logger(), "qos_state_main: %s", qos_state_main ? "true" : "false");
         RCLCPP_INFO(this->get_logger(), "qos_state_mini_arm: %s", qos_state_mini_arm ? "true" : "false");
@@ -83,22 +95,29 @@ public:
         RCLCPP_INFO(this->get_logger(), "height_mini_arm: %d", height_mini_arm);
         RCLCPP_INFO(this->get_logger(), "width_screenshot: %d", width_screenshot);
         RCLCPP_INFO(this->get_logger(), "height_screenshot: %d", height_screenshot);
+        RCLCPP_INFO(this->get_logger(), "CAM MAIN IS: %s", is_main_gray?"GRAY":"BGR");
+        RCLCPP_INFO(this->get_logger(), "CAM MINI ARM IS: %s", is_mini_arm_gray?"GRAY":"BGR");
 
-        // cap_main.set(cv::CAP_PROP_FRAME_WIDTH, width_main);
-        // cap_main.set(cv::CAP_PROP_FRAME_HEIGHT, height_main);
-
-        // cap_mini_arm.set(cv::CAP_PROP_FRAME_WIDTH, width_mini_arm);
-        // cap_mini_arm.set(cv::CAP_PROP_FRAME_HEIGHT, height_mini_arm);
-
-        // cap_screenshot.set(cv::CAP_PROP_FRAME_WIDTH, width_screenshot);
-        // cap_screenshot.set(cv::CAP_PROP_FRAME_HEIGHT, height_screenshot);
+        cap_main.open(path_cam_main ,cv::CAP_V4L2);
+        cap_mini_arm.open(path_cam_mini_arm ,cv::CAP_V4L2);
+        cap_screenshot.open(path_cam_screenshot, cv::CAP_V4L2);
 
         cap_main.set(cv::CAP_PROP_BUFFERSIZE, 1);
         cap_mini_arm.set(cv::CAP_PROP_BUFFERSIZE, 1);
 
-        cap_main.open(path_cam_main);
-        cap_mini_arm.open(path_cam_mini_arm);
-        cap_screenshot.open(path_cam_screenshot);
+        // CHNAGE REOLUTION==============================================================
+        cap_main.set(cv::CAP_PROP_FRAME_WIDTH, width_main);
+        cap_main.set(cv::CAP_PROP_FRAME_HEIGHT, height_main);
+
+        cap_mini_arm.set(cv::CAP_PROP_FRAME_WIDTH, width_mini_arm);
+        cap_mini_arm.set(cv::CAP_PROP_FRAME_HEIGHT, height_mini_arm);
+
+        cap_screenshot.set(cv::CAP_PROP_FRAME_WIDTH, width_screenshot);
+        cap_screenshot.set(cv::CAP_PROP_FRAME_HEIGHT, height_screenshot);
+
+        // CHANGE FPS====================================================================
+        cap_main.set(cv::CAP_PROP_FPS, 5);
+
 
         if(cap_screenshot.isOpened()) {
             cap_screenshot.set(cv::CAP_PROP_BUFFERSIZE, 1);  // Buffer minimal
@@ -106,12 +125,12 @@ public:
 
         // Timer untuk main camera
         timer_main = this->create_wall_timer(
-            33ms, std::bind(&arm_pov::timer_callback_main, this)
+            std::chrono::milliseconds(calc_fps(fps_main)) , std::bind(&arm_pov::timer_callback_main, this)
         );
 
         // Timer untuk mini arm camera
         timer_mini_arm = this->create_wall_timer(
-            33ms, std::bind(&arm_pov::timer_callback_mini_arm, this)
+            std::chrono::milliseconds(calc_fps(fps_mini_arm)) , std::bind(&arm_pov::timer_callback_mini_arm, this)
         );
 
         image_screenshot_sub = this->create_subscription<std_msgs::msg::Char>(
@@ -131,6 +150,7 @@ public:
         publish_compressed(topic_main, pub_main, image_pub_main, image_pub_main_compressed, qos_main);
         publish_compressed(topic_mini_arm, pub_mini_arm, image_pub_mini_arm, image_pub_mini_armcompressed, qos_mini_arm);
         publish_compressed(topic_screenshot, pub_screenshot, image_pub_screenshot, image_pub_screenshotcompressed, qos_screenshot);
+
     }
 
 private:
@@ -139,44 +159,72 @@ private:
 
     // Wrapper supaya timer bisa panggil image_callback_x
     void timer_callback_main() {
-        frame_main = image_callback_main();
+        frame_main = image_callback_main(is_main_gray);
         if (frame_main.empty()) return;
-        cv::resize(frame_main,frame_main,cv::Size(width_main,height_main),cv::INTER_LINEAR);
+        // cv::resize(frame_main,frame_main,cv::Size(width_main,height_main),cv::INTER_LINEAR);
 
 
         std_msgs::msg::Header header;
         header.stamp = this->now();
 
-        // COMPRESSED
-        if (pub_main){
-            auto comp_msg = cv_bridge::CvImage(header, "mono8", frame_main).toCompressedImageMsg(cv_bridge::JPG);
-            image_pub_main_compressed->publish(*comp_msg);
-        }
+        if(is_main_gray){
+            // COMPRESSED
+            if (pub_main){
+                auto comp_msg = cv_bridge::CvImage(header, "mono8", frame_main).toCompressedImageMsg(cv_bridge::JPG);
+                image_pub_main_compressed->publish(*comp_msg);
+            }
 
-        // RAW
-       else{
-            auto msg = cv_bridge::CvImage(header, "mono8", frame_main).toImageMsg();
-            image_pub_main->publish(*msg);
+            // RAW
+            else{
+                auto msg = cv_bridge::CvImage(header, "mono8", frame_main).toImageMsg();
+                image_pub_main->publish(*msg);
+            }
+        }else {
+            // COMPRESSED
+            if (pub_main){
+                auto comp_msg = cv_bridge::CvImage(header, "bgr8", frame_main).toCompressedImageMsg(cv_bridge::JPG);
+                image_pub_main_compressed->publish(*comp_msg);
+            }
+
+            // RAW
+            else{
+                auto msg = cv_bridge::CvImage(header, "bgr8", frame_main).toImageMsg();
+                image_pub_main->publish(*msg);
+            }
         }
     }
 
     void timer_callback_mini_arm() {
-        frame_mini_arm = image_callback_mini_arm();
+        frame_mini_arm = image_callback_mini_arm(is_mini_arm_gray);
         if (frame_mini_arm.empty()) return;
 
         std_msgs::msg::Header header;
         header.stamp = this->now();
 
-        // COMPRESSED
-        if (pub_mini_arm) {
-            auto comp_msg = cv_bridge::CvImage(header, "mono8", frame_mini_arm).toCompressedImageMsg(cv_bridge::JPG);
-            image_pub_mini_armcompressed->publish(*comp_msg);
-        }
+        if(is_mini_arm_gray){
+            // COMPRESSED
+            if (pub_mini_arm) {
+                auto comp_msg = cv_bridge::CvImage(header, "mono8", frame_mini_arm).toCompressedImageMsg(cv_bridge::JPG);
+                image_pub_mini_armcompressed->publish(*comp_msg);
+            }
 
-        // RAW
-        else {
-            auto msg = cv_bridge::CvImage(header, "mono8", frame_mini_arm).toImageMsg();
-            image_pub_mini_arm->publish(*msg);
+            // RAW
+            else {
+                auto msg = cv_bridge::CvImage(header, "mono8", frame_mini_arm).toImageMsg();
+                image_pub_mini_arm->publish(*msg);
+            }
+        }else{
+            // COMPRESSED
+            if (pub_mini_arm) {
+                auto comp_msg = cv_bridge::CvImage(header, "bgr8", frame_mini_arm).toCompressedImageMsg(cv_bridge::JPG);
+                image_pub_mini_armcompressed->publish(*comp_msg);
+            }
+
+            // RAW
+            else {
+                auto msg = cv_bridge::CvImage(header, "bgr8", frame_mini_arm).toImageMsg();
+                image_pub_mini_arm->publish(*msg);
+            }
         }
     }
     void timer_callback_screenshot(const std_msgs::msg::Char::ConstSharedPtr& msg) {
@@ -216,8 +264,8 @@ private:
         }
     }
 
-    cv::Mat image_callback_main();
-    cv::Mat image_callback_mini_arm();
+    cv::Mat image_callback_main(const bool& is_gray);
+    cv::Mat image_callback_mini_arm(const bool& is_gray);
     cv::Mat image_callback_screenshot();
 
     void publish_compressed(std::string& name_topic, bool& state,
@@ -285,7 +333,20 @@ private:
 
     int width_screenshot = 640;
     int height_screenshot = 480;
+
+    int fps_main = 30;
+    int fps_mini_arm = 30;
+
+    //additional functions
+    int calc_fps(int set_fps);
+    
+    bool is_main_gray = true;
+    bool is_mini_arm_gray = true;
 };
+
+int arm_pov::calc_fps(int set_fps){
+    return 1000/set_fps;
+}
 
 void arm_pov::raw_callback(const sensor_msgs::msg::Image::ConstSharedPtr& msg, 
                            rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr raw_pub_, 
@@ -334,31 +395,43 @@ void arm_pov::publish_compressed(std::string& name_topic, bool& state,
     }
 }
 
-cv::Mat arm_pov::image_callback_main(){
+cv::Mat arm_pov::image_callback_main(const bool& is_gray){
     if(!cap_main.isOpened()){
         return cv::Mat();
     }
     cv::Mat frame;
     cap_main >> frame;
+    // RCLCPP_INFO(this->get_logger(),"COL: %d, ROW: %d",frame.cols,frame.rows);
     if(frame.empty()){
         RCLCPP_WARN(this->get_logger(), "Empty frame captured! FOR MAIN");
         return cv::Mat();
     }
-    cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+
+    if(is_gray){
+        cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+    }
+
     return frame;
 }
 
-cv::Mat arm_pov::image_callback_mini_arm(){
+cv::Mat arm_pov::image_callback_mini_arm(const bool& is_gray){
     if(!cap_mini_arm.isOpened()){
         return cv::Mat();
     }
     cv::Mat frame;
     cap_mini_arm >> frame;
+
+    // RCLCPP_INFO(this->get_logger(),"COL: %d, ROW: %d",frame.cols,frame.rows);
+
     if(frame.empty()){
         RCLCPP_WARN(this->get_logger(), "Empty frame captured! FOR MINI ARM");
         return cv::Mat();
     }
-    cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+
+    if(is_gray){
+        cv::cvtColor(frame, frame, cv::COLOR_BGR2GRAY);
+    }
+    
     return frame;
 }
 

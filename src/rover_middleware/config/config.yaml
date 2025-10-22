@@ -4,25 +4,54 @@ arm_pov:
     qos_state_mini_arm: true
     qos_state_screenshot: true
 
+#========================================================================================#
+
     topic_main: "/image_main"
     topic_mini_arm: "/image_mini_arm"
     topic_screenshot: "/image_screenshot"
+
+#========================================================================================#
 
     pub_main_compressed_image: false
     pub_mini_arm_compressed_image: false
     pub_screenshot_compressed_image: false
 
-    path_cam_main: "/dev/v4l/by-id/usb-BC-231018-A_XWF_1080P_PC_Camera-video-index0"
-    path_cam_mini_arm: "/dev/v4l/by-id/usb-ANYKA_FHD_Camera_12345-video-index0"
+#========================================================================================#
+
+    path_cam_main: "/dev/v4l/by-id/usb-Generic_HP_TrueVision_HD_Camera_0001-video-index0"
+    path_cam_mini_arm: "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH1706_20211203_v004-video-index0"
     path_cam_screenshot: "/dev/v4l/by-id/usb-Generic_HP_TrueVision_HD_Camera_0001-video-index0"
 
-    #320x240, 640x480, 1280x720, 1920x1080
+#=========================================================================================#
 
-    width_main: 640
-    height_main: 480
+    # 320x240, 640x480, 1280x720, 1920x1080
+    # 640x360, 640x480, 1920x1080
 
-    width_mini_arm: 320
-    height_mini_arm: 240
+    # chack list devive with [v4l2-ctl --list-devices]
+    # check supported resolutions with [v4l2-ctl --list-formats-ext -d /dev/videoX]
+
+    width_main: 320
+    height_main: 288
+
+    width_mini_arm: 640
+    height_mini_arm: 480
 
     width_screenshot: 640
     height_screenshot: 480
+
+#========================================================================================#
+
+    # check supported fps with [v4l2-ctl --list-formats-ext -d /dev/videoX]
+    # formula to calculate fps is Timer Interval (ms) = 1000 / Target FPS
+    # e.g., 5 FPS  → 200ms, 10 FPS → 100ms, 15 FPS → 67ms, 30 FPS → 33ms
+    fps_main: 30
+    fps_mini_arm: 30
+
+#========================================================================================#
+    # if TRUE camera GRAY
+    # if FALSE camera BGR
+
+    is_main_gray: true
+    is_mini_arm_gray: true
+
+#========================================================================================#

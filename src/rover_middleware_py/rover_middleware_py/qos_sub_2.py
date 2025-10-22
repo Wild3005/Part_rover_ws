@@ -16,7 +16,7 @@ class CompressedImageSubscriber(Node):
         )
         self.sub = self.create_subscription(
             CompressedImage,                 # <--- bedanya di sini
-            '/image_mini_arm',  # pastikan sesuai topic
+            '/image_mini_arm/compressed',  # pastikan sesuai topic
             self.callback,
             qos_profile
         )
