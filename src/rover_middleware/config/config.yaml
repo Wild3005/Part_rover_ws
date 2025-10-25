@@ -18,8 +18,8 @@ arm_pov:
 
 #========================================================================================#
 
-    path_cam_main: "/dev/v4l/by-id/usb-Generic_HP_TrueVision_HD_Camera_0001-video-index0"
-    path_cam_mini_arm: "/dev/v4l/by-id/usb-GENERAL_XVV-6320S_JH1706_20211203_v004-video-index0"
+    path_cam_main: "/dev/v4l/by-id/usb-BC-231018-A_XWF_1080P_PC_Camera-video-index0"
+    path_cam_mini_arm: "/dev/v4l/by-id/usb-ANYKA_FHD_Camera_12345-video-index0"
     path_cam_screenshot: "/dev/v4l/by-id/usb-Generic_HP_TrueVision_HD_Camera_0001-video-index0"
 
 #=========================================================================================#
@@ -52,6 +52,6 @@ arm_pov:
     # if FALSE camera BGR
 
     is_main_gray: true
-    is_mini_arm_gray: true
+    is_mini_arm_gray: false
 
 #========================================================================================#

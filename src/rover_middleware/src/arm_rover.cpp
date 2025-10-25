@@ -45,6 +45,8 @@ public:
         this->declare_parameter("is_main_gray", true);
         this->declare_parameter("is_mini_arm_gray", true);
 
+        //===============================================================================
+
         path_cam_main = this->get_parameter("path_cam_main").as_string();
         path_cam_mini_arm = this->get_parameter("path_cam_mini_arm").as_string();
         path_cam_screenshot = this->get_parameter("path_cam_screenshot").as_string();
@@ -140,6 +142,9 @@ public:
                 .durability(rclcpp::DurabilityPolicy::Volatile),
             std::bind(&arm_pov::timer_callback_screenshot, this, std::placeholders::_1));
 
+        param_callback_handler_ = this->add_on_set_parameters_callback(
+            std::bind(&arm_pov::param_callback, this, std::placeholders::_1)
+        );
 
         // QoS setting
         qos_output_publish(qos_main, qos_state_main);
@@ -268,6 +273,8 @@ private:
     cv::Mat image_callback_mini_arm(const bool& is_gray);
     cv::Mat image_callback_screenshot();
 
+    //FUNCTION===========================================================================
+
     void publish_compressed(std::string& name_topic, bool& state,
         rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr&,
         rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr&, 
@@ -282,6 +289,9 @@ private:
     void compressed_callback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr& msg, 
                              rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr compressed_pub_, 
                              rclcpp::Logger logger);
+
+    rcl_interfaces::msg::SetParametersResult param_callback(const std::vector<rclcpp::Parameter> &params);
+    //====================================================================================
 
     cv::VideoCapture cap_main;
     cv::VideoCapture cap_mini_arm;
@@ -342,7 +352,63 @@ private:
     
     bool is_main_gray = true;
     bool is_mini_arm_gray = true;
+
+    rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr param_callback_handler_;
+
 };
+
+//PARAM HANDLERERRRR
+
+rcl_interfaces::msg::SetParametersResult arm_pov::param_callback(const std::vector<rclcpp::Parameter> &params){
+    rcl_interfaces::msg::SetParametersResult result;
+    result.successful = true;
+
+    for(const auto &param : params){
+        if(param.get_name() == "fps_main"){
+            int new_fps = param.as_int();
+            if(new_fps > 0){
+                fps_main = new_fps;
+                RCLCPP_INFO(this->get_logger(),"[SUCCES] PARAM frame_main: %d",fps_main);
+
+                if(timer_main){
+                    timer_main->cancel();
+                }
+
+                timer_main = this->create_wall_timer(std::chrono::milliseconds(calc_fps(fps_main)),std::bind(&arm_pov::timer_callback_main, this));
+            }else RCLCPP_INFO(get_logger(),"INVALID FPS VALUE");
+        }else if(param.get_name() == "fps_mini_arm"){
+            int new_fps = param.as_int();
+            if(new_fps > 0){
+                fps_mini_arm = new_fps;
+                RCLCPP_INFO(this->get_logger(),"[SUCCES] PARAM frame_main: %d",fps_mini_arm);
+
+                if(timer_mini_arm){
+                    timer_mini_arm->cancel();
+                }
+
+                timer_mini_arm = this->create_wall_timer(std::chrono::milliseconds(calc_fps(fps_mini_arm)),std::bind(&arm_pov::timer_callback_mini_arm, this));
+            }else RCLCPP_INFO(get_logger(),"INVALID FPS VALUE");
+        }else if(param.get_name() == "is_main_gray"){
+            bool new_param = param.as_bool();
+            if(new_param != is_main_gray){
+                is_main_gray = new_param;
+            }
+        }else if(param.get_name() == "is_mini_arm_gray"){
+            bool new_param = param.as_bool();
+            if(new_param != is_mini_arm_gray){
+                is_mini_arm_gray = new_param;
+            }
+        }
+        // else if(param.get_name() == "width_main"){
+        //     cap_main.set(cv::CAP_PROP_FRAME_WIDTH, width_main);
+        // }
+        // else if(param.get_name() == "height_main"){
+        //     cap_main.set(cv::CAP_PROP_FRAME_WIDTH, height_main);
+        // }//sek bingung
+    }
+    return result;
+}
+
 
 int arm_pov::calc_fps(int set_fps){
     return 1000/set_fps;
